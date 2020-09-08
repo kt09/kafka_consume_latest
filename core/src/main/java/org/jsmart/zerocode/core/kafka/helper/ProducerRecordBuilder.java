@@ -11,15 +11,17 @@ public class ProducerRecordBuilder {
     private Object key;
     private Object value;
     private Headers headers;
+    private Integer partitions;
 
     private ProducerRecordBuilder() {}
 
-    public static ProducerRecordBuilder from(String topic, Object key, Object value) {
+    public static ProducerRecordBuilder from(String topic, Object key, Object value, Integer partitions) {
         ProducerRecordBuilder producerRecordBuilder = new ProducerRecordBuilder();
 
         producerRecordBuilder.topic = topic;
         producerRecordBuilder.key = key;
         producerRecordBuilder.value = value;
+        producerRecordBuilder.partitions = partitions;
 
         return producerRecordBuilder;
     }
@@ -34,6 +36,6 @@ public class ProducerRecordBuilder {
     }
 
     public ProducerRecord<Object, Object> build() {
-        return new ProducerRecord<>(topic, null, null, key, value, headers);
+        return new ProducerRecord<>(topic, partitions, null, key, value, headers);
     }
 }

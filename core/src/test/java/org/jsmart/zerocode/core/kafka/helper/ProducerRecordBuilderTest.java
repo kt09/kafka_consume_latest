@@ -15,7 +15,7 @@ public class ProducerRecordBuilderTest {
     @Test
     public void should_build_producer_record_without_headers() {
         ProducerRecord<Object, Object> producerRecord = ProducerRecordBuilder
-                .from("topic", "key", "value")
+                .from("topic", "key", "value",10)
                 .build();
 
         assertMandatoryProperties(producerRecord);
@@ -24,7 +24,7 @@ public class ProducerRecordBuilderTest {
     @Test
     public void should_build_producer_record_with_headers() {
         ProducerRecord<Object, Object> producerRecord = ProducerRecordBuilder
-                .from("topic", "key", "value")
+                .from("topic", "key", "value",1 )
                 .withHeaders(Collections.singletonMap("headerKey", "headerValue"))
                 .build();
 
@@ -39,5 +39,6 @@ public class ProducerRecordBuilderTest {
         assertEquals("topic", producerRecord.topic());
         assertEquals("key", producerRecord.key());
         assertEquals("value", producerRecord.value());
+        assertEquals("partition", producerRecord.partition());
     }
 }
