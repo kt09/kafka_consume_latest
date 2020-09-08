@@ -20,6 +20,7 @@ public class ConsumerLocalConfigs {
     private final Integer maxNoOfRetryPollsOrTimeouts;
     private final Long pollingTime;
     private final String seek;
+    private final String seekToBegining;
 
     @JsonCreator
     public ConsumerLocalConfigs(
@@ -30,7 +31,8 @@ public class ConsumerLocalConfigs {
             @JsonProperty("showRecordsConsumed") Boolean showRecordsConsumed,
             @JsonProperty("maxNoOfRetryPollsOrTimeouts") Integer maxNoOfRetryPollsOrTimeouts,
             @JsonProperty("pollingTime") Long pollingTime,
-            @JsonProperty("seek") String seek) {
+            @JsonProperty("seek") String seek,
+            @JsonProperty("seekToBegining") String seekToBegining) {
         this.recordType = recordType;
         this.fileDumpTo = fileDumpTo;
         this.commitAsync = commitAsync;
@@ -39,6 +41,7 @@ public class ConsumerLocalConfigs {
         this.maxNoOfRetryPollsOrTimeouts = maxNoOfRetryPollsOrTimeouts;
         this.pollingTime = pollingTime;
         this.seek = seek;
+        this.seekToBegining = seekToBegining;
     }
 
     public String getRecordType() {
@@ -74,6 +77,8 @@ public class ConsumerLocalConfigs {
         return seek;
     }
 
+    public String getSeekToBegining() {return seekToBegining;}
+
     @JsonIgnore
     public String[] getSeekTopicPartitionOffset() {
         return seek.split(",");
@@ -91,13 +96,14 @@ public class ConsumerLocalConfigs {
                 Objects.equals(showRecordsConsumed, that.showRecordsConsumed) &&
                 Objects.equals(maxNoOfRetryPollsOrTimeouts, that.maxNoOfRetryPollsOrTimeouts) &&
                 Objects.equals(pollingTime, that.pollingTime) &&
-                Objects.equals(seek, that.seek);
+                Objects.equals(seek, that.seek) &&
+                Objects.equals(seekToBegining, that.seekToBegining);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(recordType, fileDumpTo, commitAsync, commitSync, showRecordsConsumed, maxNoOfRetryPollsOrTimeouts, pollingTime, seek);
+        return Objects.hash(recordType, fileDumpTo, commitAsync, commitSync, showRecordsConsumed, maxNoOfRetryPollsOrTimeouts, pollingTime, seek, seekToBegining);
     }
 
     @Override
@@ -111,6 +117,7 @@ public class ConsumerLocalConfigs {
                 ", maxNoOfRetryPollsOrTimeouts=" + maxNoOfRetryPollsOrTimeouts +
                 ", pollingTime=" + pollingTime +
                 ", seek=" + seek +
+                ", seek=" + seekToBegining +
                 '}';
     }
 }

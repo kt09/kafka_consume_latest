@@ -68,7 +68,8 @@ public class KafkaProducerHelper {
                 // It's a JSON as String. Nothing to worry !
                 // Kafka StringSerializer needs in this format.
                 // --------------------------------------------
-                recordToSend.getValue().toString())
+                recordToSend.getValue().toString(),
+                recordToSend.getPartition())
                 .withHeaders(recordToSend.getHeaders())
                 .build();
     }
