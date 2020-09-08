@@ -7,6 +7,7 @@ import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,9 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
@@ -35,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
+import static java.time.temporal.ChronoUnit.*;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.jsmart.zerocode.core.kafka.KafkaConstants.DEFAULT_POLLING_TIME_MILLI_SEC;
@@ -99,7 +99,8 @@ public class KafkaConsumerHelper {
                     consumerCommon.getShowRecordsConsumed(),
                     consumerCommon.getMaxNoOfRetryPollsOrTimeouts(),
                     consumerCommon.getPollingTime(),
-                    consumerCommon.getSeek());
+                    consumerCommon.getSeek(),
+                    consumerCommon.getSeekToBegining());
         }
 
         // Handle recordType
@@ -117,8 +118,11 @@ public class KafkaConsumerHelper {
         // Handle pollingTime
         Long effectivePollingTime = ofNullable(consumerLocal.getPollingTime()).orElse(consumerCommon.getPollingTime());
 
-        // Handle pollingTime
+        // Handle seek
         String effectiveSeek = ofNullable(consumerLocal.getSeek()).orElse(consumerCommon.getSeek());
+
+        // Handle seekToBegining
+        String effectiveSeekToBegining = ofNullable(consumerLocal.getSeekToBegining()).orElse(consumerCommon.getSeekToBegining());
 
         // Handle commitSync and commitAsync -START
         Boolean effectiveCommitSync;
@@ -144,7 +148,8 @@ public class KafkaConsumerHelper {
                 effectiveShowRecordsConsumed,
                 effectiveMaxNoOfRetryPollsOrTimeouts,
                 effectivePollingTime,
-                effectiveSeek);
+                effectiveSeek,
+                effectiveSeekToBegining);
     }
 
     public static ConsumerLocalConfigs readConsumerLocalTestProperties(String requestJsonWithConfigWrapped) {
@@ -263,8 +268,10 @@ public class KafkaConsumerHelper {
         // --------------------------------------------------------
     }
 
-    public static void handleSeekOffset(ConsumerLocalConfigs effectiveLocal, Consumer consumer) {
+    public static void handleSeekOffset(ConsumerLocalConfigs effectiveLocal, Consumer consumer,String topicName) {
         String seek = effectiveLocal.getSeek();
+        String seekToBegining = effectiveLocal.getSeekToBegining();
+
         if (!isEmpty(seek)) {
             String[] seekPosition = effectiveLocal.getSeekTopicPartitionOffset();
             TopicPartition topicPartition = new TopicPartition(seekPosition[0], parseInt(seekPosition[1]));
@@ -275,6 +282,32 @@ public class KafkaConsumerHelper {
             consumer.unsubscribe();
             consumer.assign(topicPartitions);
             consumer.seek(topicPartition, parseLong(seekPosition[2]));
+        }else {
+            String seekPosition = seekToBegining;
+            TopicPartition topicPartition = new TopicPartition(topicName,Integer.parseInt(seekPosition));
+
+            Set<TopicPartition> topicPartitions = new HashSet<>();
+            topicPartitions.add(topicPartition);
+
+            //ConsumerRecords<String, String> records = consumer.poll(100);
+                if(!isEmpty(seekPosition)) {
+                    Map<TopicPartition, Long> query = new HashMap<>();
+                    query.put(
+                            topicPartition,
+                            Instant.now().minus(3, SECONDS).toEpochMilli());
+
+                    consumer.unsubscribe();
+                    consumer.assign(topicPartitions);
+
+                    Map<TopicPartition, OffsetAndTimestamp> result = consumer.offsetsForTimes(query);
+                    result.entrySet()
+                            .stream()
+                            .forEach(entry -> consumer.seek(entry.getKey(), entry.getValue().offset()));
+
+                    System.out.println(consumer.position(topicPartition));
+
+
+                }
         }
     }
 
@@ -286,9 +319,10 @@ public class KafkaConsumerHelper {
 
     private static void validateSeekConfig(ConsumerLocalConfigs localConfigs) {
         String seek = localConfigs.getSeek();
+        String seekToBegining = localConfigs.getSeekToBegining();
         if(!isEmpty(seek)) {
             String[] split = seek.split(",");
-            if(split == null || split.length < 3) {
+            if(split == null || split.length < 2) {
                 throw new RuntimeException("\n------> 'seek' should contain 'topic,partition,offset' e.g. 'topic1,0,2' ");
             }
         }

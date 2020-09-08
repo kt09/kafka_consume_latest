@@ -61,7 +61,7 @@ public class KafkaReceiver {
 
         int noOfTimeOuts = 0;
 
-        handleSeekOffset(effectiveLocal, consumer);
+        handleSeekOffset(effectiveLocal, consumer, topicName);
 
         while (true) {
             LOGGER.info("polling records  - noOfTimeOuts reached : " + noOfTimeOuts);
